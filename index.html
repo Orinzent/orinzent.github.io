@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FixLens by Orinzent | AI Troubleshooting Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root {
+            --primary: #2563eb;       /* Corporate Blue */
+            --primary-dark: #0f172a;  /* Deep Navy/Black */
+            --primary-light: #eff6ff; 
+            --accent: #f97316;        /* Orange Accent */
+            --text-main: #1e293b;     
+            --text-muted: #64748b;    
+            --bg-body: #ffffff;
+            --bg-alt: #f8fafc;        
+            --border: #e2e8f0;
+            --radius: 16px;
+            --max-width: 1200px;
+            --shadow-phone: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            --nav-height: 80px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            background-color: var(--bg-body);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        img { max-width: 100%; display: block; }
+        a { text-decoration: none; color: inherit; transition: all 0.2s; }
+
+        /* --- UTILITIES --- */
+        .container { max-width: var(--max-width); margin: 0 auto; padding: 0 20px; }
+        .text-center { text-align: center; }
+        .section-title { font-size: 2.5rem; font-weight: 800; margin-bottom: 1rem; color: var(--primary-dark); }
+        .section-subtitle { color: var(--primary); font-weight: 600; text-transform: uppercase; font-size: 0.875rem; letter-spacing: 1px; margin-bottom: 1rem; display: block; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 32px; border-radius: 50px; font-weight: 600; cursor: pointer; border: none; gap: 8px; font-size: 1rem; }
+        .btn-primary { background-color: var(--primary-dark); color: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+        .btn-primary:hover { transform: translateY(-2px); background-color: #000; }
+        .btn-outline { border: 2px solid var(--border); background: white; color: var(--text-main); }
+        .btn-outline:hover { border-color: var(--primary-dark); }
+        
+        /* Page View Utility - for SPA behavior */
+        .view-section { display: none; padding-top: var(--nav-height); animation: fadeIn 0.4s ease-out; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- PHONE MOCKUP CSS --- */
+        .phone-frame {
+            background: #111;
+            border-radius: 40px;
+            padding: 12px;
+            box-shadow: var(--shadow-phone);
+            width: 300px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 10;
+        }
+        .phone-screen {
+            background: #fff;
+            border-radius: 28px;
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 9/19;
+        }
+        .phone-screen img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .phone-notch {
+            position: absolute;
+            top: 0; left: 50%; transform: translateX(-50%);
+            width: 120px; height: 25px;
+            background: #111;
+            border-bottom-left-radius: 16px; border-bottom-right-radius: 16px;
+            z-index: 20;
+        }
+
+        /* --- NAVIGATION --- */
+        .navbar {
+            position: fixed;
+            top: 0; width: 100%; height: var(--nav-height);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+            display: flex; align-items: center;
+        }
+        .nav-inner { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .logo { font-size: 1.5rem; font-weight: 800; color: var(--primary-dark); display: flex; align-items: center; gap: 10px; }
+        .nav-links { display: flex; gap: 32px; }
+        .nav-links a { font-weight: 500; font-size: 0.95rem; color: var(--text-muted); }
+        .nav-links a:hover, .nav-links a.active { color: var(--primary); }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            padding: 100px 0;
+            background: linear-gradient(180deg, #fff 0%, #f1f5f9 100%);
+            overflow: hidden;
+            min-height: 90vh;
+            display: flex; align-items: center;
+        }
+        .hero-content h1 {
+            font-size: 3.5rem;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            color: var(--primary-dark);
+            letter-spacing: -1px;
+        }
+        .hero-content p { font-size: 1.25rem; color: var(--text-muted); margin-bottom: 32px; max-width: 500px; }
+        .badge { display: inline-flex; align-items: center; padding: 6px 16px; background: #e0f2fe; color: #0284c7; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 24px; }
+        
+        /* --- PRODUCTS SECTION --- */
+        .products-section { padding: 100px 0; background: white; }
+        .product-card-wide {
+            background: white; border: 1px solid var(--border); border-radius: 30px;
+            overflow: hidden; box-shadow: var(--shadow-phone);
+            display: flex; flex-direction: column;
+            max-width: 900px; margin: 0 auto;
+        }
+        .product-header { padding: 40px; background: var(--bg-alt); display: flex; align-items: center; gap: 20px; border-bottom: 1px solid var(--border); }
+        .app-icon { width: 80px; height: 80px; background: black; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.5rem; }
+        .product-body { padding: 40px; }
+
+        /* --- FEATURES --- */
+        .showcase-section { padding: 100px 0; background: var(--bg-alt); }
+        .showcase-row { display: flex; align-items: center; gap: 60px; margin-bottom: 120px; }
+        .showcase-row:last-child { margin-bottom: 0; }
+        .showcase-row.reverse { flex-direction: row-reverse; }
+        .feature-text h3 { font-size: 2rem; margin-bottom: 16px; color: var(--primary-dark); }
+        .check { color: #16a34a; font-size: 1.25rem; }
+        .feature-list li { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; font-weight: 500; }
+
+        /* --- ABOUT & MISSION --- */
+        .about-section { background: var(--primary-dark); color: white; padding: 100px 0; border-radius: 40px; margin: 40px 20px; }
+        .about-content { max-width: 800px; margin: 0 auto; text-align: center; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; border-top: 1px solid #334155; padding-top: 40px; margin-top: 40px; }
+        .stat h4 { font-size: 3rem; font-weight: 800; color: white; margin-bottom: 5px; }
+        .stat span { color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-size: 0.8rem; }
+
+        /* --- CONTACT PAGE --- */
+        .page-header { background: var(--bg-alt); padding: 80px 0; text-align: center; border-bottom: 1px solid var(--border); }
+        .contact-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 60px; margin-top: 60px; }
+        .contact-box { background: var(--bg-alt); padding: 30px; border-radius: 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; }
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9rem; }
+        .form-input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: inherit; }
+        .form-input:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+        /* --- LEGAL PAGES --- */
+        .legal-content { max-width: 800px; margin: 60px auto; padding: 0 20px; }
+        .legal-content h2 { font-size: 1.8rem; color: var(--primary-dark); margin: 40px 0 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .legal-content p { margin-bottom: 20px; color: var(--text-muted); }
+        .legal-content ul { margin-left: 20px; margin-bottom: 20px; color: var(--text-muted); }
+        .legal-content li { margin-bottom: 10px; }
+
+        /* --- FOOTER --- */
+        .main-footer { background: white; padding: 60px 0 30px; border-top: 1px solid var(--border); margin-top: 80px; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+        .footer-links h4 { margin-bottom: 20px; }
+        .footer-links a { display: block; margin-bottom: 12px; color: var(--text-muted); }
+        .footer-links a:hover { color: var(--primary); }
+
+        /* --- RESPONSIVE --- */
+        @media (max-width: 900px) {
+            .hero { padding-top: 40px; text-align: center; display: block; }
+            .grid-2, .showcase-row, .showcase-row.reverse, .contact-grid { display: flex; flex-direction: column; text-align: center; gap: 40px; }
+            .hero-content h1 { font-size: 2.5rem; }
+            .nav-links { display: none; }
+            .phone-frame { width: 280px; margin: 0 auto; }
+            .stats-grid { grid-template-columns: 1fr; gap: 40px; }
+            .product-header { flex-direction: column; text-align: center; }
+            .footer-grid { grid-template-columns: 1fr; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container nav-inner">
+            <a href="#home" class="logo" onclick="navigateTo('home')">
+                <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+                    <rect width="100" height="100" rx="20" fill="#0f172a"/>
+                    <circle cx="50" cy="50" r="35" stroke="white" stroke-width="8"/>
+                    <path d="M50 20L58 40L80 42L62 56L68 78L50 65L32 78L38 56L20 42L42 40L50 20Z" fill="white"/>
+                </svg>
+                Orinzent
+            </a>
+            <div class="nav-links">
+                <a href="#home" onclick="navigateTo('home')">Home</a>
+                <a href="#products" onclick="navigateTo('home')">Products</a>
+                <a href="#about" onclick="navigateTo('home')">Company</a>
+                <a href="#contact" onclick="navigateTo('contact')">Contact</a>
+            </div>
+            <a href="#download" class="btn btn-primary" style="padding: 10px 24px; font-size: 0.9rem;">Download App</a>
+        </div>
+    </nav>
+
+    <!-- VIEW: HOME (Landing Page) -->
+    <div id="view-home" class="view-section active">
+        
+        <!-- 1. Homepage / Hero -->
+        <section id="hero" class="hero">
+            <div class="container grid-2">
+                <div class="hero-content">
+                    <div class="badge">FixLens Labs — AI for Real-World Problem Solving</div>
+                    <h1>Fix anything in <br><span style="color: var(--primary);">under 30 seconds.</span></h1>
+                    <p>
+                        We build AI that helps people fix problems instantly. From engine checks to home repairs, get safe, step-by-step guidance.
+                    </p>
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap; justify-content: center md:justify-content: flex-start;">
+                        <button class="btn btn-primary">
+                            <i class="ph-fill ph-google-play-logo"></i> Google Play
+                        </button>
+                        <button class="btn btn-primary">
+                            <i class="ph-fill ph-app-store-logo"></i> App Store
+                        </button>
+                    </div>
+                </div>
+                <!-- Hero Image -->
+                <div class="hero-image">
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen">
+                            <img src="resized_4.png" alt="App Home Screen">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 2. Products Section -->
+        <section id="products" class="products-section">
+            <div class="container">
+                <div class="text-center" style="margin-bottom: 60px;">
+                    <span class="section-subtitle">Our Products</span>
+                    <h2 class="section-title">Built by Orinzent</h2>
+                </div>
+                
+                <div class="product-card-wide">
+                    <div class="product-header">
+                        <div class="app-icon">
+                           <img src="fixlens_black.png" alt="Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                        </div>
+                        <div>
+                            <h3 style="font-size: 1.8rem; font-weight: 700; color: var(--primary-dark);">FixLens: AI Repair Assistant</h3>
+                            <p style="color: var(--text-muted);">Available on iOS & Android</p>
+                        </div>
+                        <div style="margin-left: auto;">
+                            <button class="btn btn-outline">Learn More</button>
+                        </div>
+                    </div>
+                    <div class="product-body">
+                        <p style="font-size: 1.1rem; color: var(--text-muted); margin-bottom: 20px;">
+                            FixLens is the world’s fastest AI troubleshooting assistant. Take a photo of any home, car, or electronics issue, and FixLens instantly identifies the problem and shows you how to fix it with clear, safe step-by-step instructions.
+                        </p>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <span style="display: flex; align-items: center; gap: 8px; font-weight: 600;"><i class="ph-fill ph-camera text-primary"></i> AI Diagnosis</span>
+                            <span style="display: flex; align-items: center; gap: 8px; font-weight: 600;"><i class="ph-fill ph-wrench text-primary"></i> Repair Guides</span>
+                            <span style="display: flex; align-items: center; gap: 8px; font-weight: 600;"><i class="ph-fill ph-shield-check text-primary"></i> Safety First</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Feature Highlights -->
+        <section class="showcase-section">
+            <div class="container">
+                <div class="text-center" style="margin-bottom: 80px;">
+                    <span class="section-subtitle">Features</span>
+                    <h2 class="section-title">How it Works</h2>
+                </div>
+
+                <!-- Feature 1 -->
+                <div class="showcase-row">
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen"><img src="resized_2.png" alt="Diagnosis"></div>
+                    </div>
+                    <div class="feature-text">
+                        <h3>1. Snap & Diagnose</h3>
+                        <p>Our Vision AI identifies objects, detects damage, and analyzes severity in milliseconds.</p>
+                        <ul class="feature-list">
+                            <li><i class="ph-bold ph-check check"></i> Instant object recognition</li>
+                            <li><i class="ph-bold ph-check check"></i> Contextual analysis engine</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="showcase-row reverse">
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen"><img src="resized_3.png" alt="Steps"></div>
+                    </div>
+                    <div class="feature-text">
+                        <h3>2. Get Step-by-Step Fixes</h3>
+                        <p>No more guessing. FixLens generates a clear, safe "Fix Protocol" tailored to your situation.</p>
+                        <ul class="feature-list">
+                            <li><i class="ph-bold ph-check check"></i> Clear, numbered instructions</li>
+                            <li><i class="ph-bold ph-check check"></i> Safety warnings included</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. About Company -->
+        <section id="about" class="container">
+            <div class="about-section">
+                <div class="about-content">
+                    <span style="color: var(--accent); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; display: block;">About Orinzent</span>
+                    <h2>We make expert knowledge accessible to everyone.</h2>
+                    <p>
+                        <strong>Our Mission:</strong> To make troubleshooting simple, safe, and accessible using AI. 
+                        We believe you shouldn't need to be an expert to fix the things you own.
+                    </p>
+                    <p style="font-size: 1rem;">
+                        Orinzent builds AI repair assistants, vision-based diagnosis tools, and step-by-step fix systems.
+                    </p>
+                    <div class="stats-grid">
+                        <div class="stat"><h4>95%</h4><span>Accuracy Rate</span></div>
+                        <div class="stat"><h4>30s</h4><span>Avg. Fix Time</span></div>
+                        <div class="stat"><h4>24/7</h4><span>AI Availability</span></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- VIEW: CONTACT (Dedicated Page) -->
+    <div id="view-contact" class="view-section">
+        <div class="page-header">
+            <div class="container">
+                <h1 class="section-title">Contact Us</h1>
+                <p style="font-size: 1.2rem; color: var(--text-muted);">We are here to help with support, partnerships, and press.</p>
+            </div>
+        </div>
+        <div class="container contact-grid">
+            <div>
+                <h3 style="font-size: 1.5rem; margin-bottom: 30px; color: var(--primary-dark);">Get in touch</h3>
+                <div class="contact-box">
+                    <i class="ph-fill ph-envelope-simple text-primary" style="font-size: 24px;"></i>
+                    <div>
+                        <strong>Support Email</strong>
+                        <p style="color: var(--text-muted);">support@fixlens.com</p>
+                    </div>
+                </div>
+                <div class="contact-box">
+                    <i class="ph-fill ph-map-pin text-primary" style="font-size: 24px;"></i>
+                    <div>
+                        <strong>Headquarters</strong>
+                        <p style="color: var(--text-muted);">123 Innovation Blvd, CA, USA</p>
+                    </div>
+                </div>
+                <div class="contact-box">
+                    <i class="ph-fill ph-users text-primary" style="font-size: 24px;"></i>
+                    <div>
+                        <strong>Social Media</strong>
+                        <div style="display: flex; gap: 10px; margin-top: 5px;">
+                            <a href="#" style="color: var(--primary);">Twitter</a> &bull;
+                            <a href="#" style="color: var(--primary);">LinkedIn</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact Form -->
+            <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: var(--shadow-phone); border: 1px solid var(--border);">
+                <form>
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" placeholder="Your Name">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" placeholder="you@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-input" rows="5" placeholder="How can we help?"></textarea>
+                    </div>
+                    <button type="button" class="btn btn-primary" style="width: 100%;">Send Message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW: PRIVACY POLICY (Dedicated Page) -->
+    <div id="view-privacy" class="view-section">
+        <div class="page-header">
+            <div class="container">
+                <h1 class="section-title">Privacy Policy</h1>
+                <p>Last Updated: October 2025</p>
+            </div>
+        </div>
+        <div class="container legal-content">
+            <p>At Orinzent ("we", "us", or "our"), we are committed to protecting your personal information and your right to privacy. This Privacy Policy explains how we collect, use, and share your data when you use our app, FixLens.</p>
+
+            <h2>1. Information We Collect</h2>
+            <p>We collect information that you voluntarily provide to us when you use the app.</p>
+            <ul>
+                <li><strong>Visual Data:</strong> Photos you upload for diagnosis.</li>
+                <li><strong>Device Information:</strong> Device model, OS version, and unique device identifiers for crash reporting.</li>
+                <li><strong>Usage Data:</strong> How you interact with the app features.</li>
+            </ul>
+
+            <h2>2. How We Use Your Information</h2>
+            <p>We use your visual data strictly for the purpose of providing repair diagnosis and improving our AI models.</p>
+            <ul>
+                <li>To generate troubleshooting steps.</li>
+                <li>To identify objects and parts.</li>
+                <li>To ensure app safety and security.</li>
+            </ul>
+
+            <h2>3. Data Storage & Deletion</h2>
+            <p>Images uploaded for "Quick Scan" are processed temporarily and deleted from our servers after the session, unless you explicitly choose to save them to your history. You may request full data deletion at any time.</p>
+
+            <h2>4. Contact Us</h2>
+            <p>If you have questions about this policy, please email us at <strong>privacy@fixlens.com</strong>.</p>
+        </div>
+    </div>
+
+    <!-- VIEW: TERMS & CONDITIONS (Dedicated Page) -->
+    <div id="view-terms" class="view-section">
+        <div class="page-header">
+            <div class="container">
+                <h1 class="section-title">Terms & Conditions</h1>
+                <p>Please read these terms carefully before using FixLens.</p>
+            </div>
+        </div>
+        <div class="container legal-content">
+            <h2>1. Acceptance of Terms</h2>
+            <p>By accessing and using FixLens, you accept and agree to be bound by the terms and provision of this agreement.</p>
+
+            <h2>2. Safety Disclaimer (Crucial)</h2>
+            <p><strong>FixLens is an AI assistant, not a professional.</strong> The advice provided is for informational purposes only.</p>
+            <ul>
+                <li><strong>High Risk:</strong> Do NOT attempt repairs involving high-voltage electricity, gas lines, or structural integrity without professional certification.</li>
+                <li><strong>Liability:</strong> Orinzent Inc. is not liable for any injury, property damage, or loss resulting from the use of this app. Use your own judgment and proceed at your own risk.</li>
+            </ul>
+
+            <h2>3. User Responsibilities</h2>
+            <p>You agree not to use the app for any unlawful purpose or to analyze illegal content.</p>
+        </div>
+    </div>
+
+    <!-- VIEW: DATA DELETION (Dedicated Page) -->
+    <div id="view-deletion" class="view-section">
+        <div class="page-header">
+            <div class="container">
+                <h1 class="section-title">Account & Data Deletion</h1>
+                <p>Control your data transparency.</p>
+            </div>
+        </div>
+        <div class="container legal-content">
+            <p>According to Google Play and App Store requirements, users have the right to request the deletion of their account and associated data.</p>
+
+            <h2>How to Request Deletion</h2>
+            <p>You can request the deletion of your account and data through the following methods:</p>
+            
+            <h3>Method 1: In-App</h3>
+            <p>Go to <strong>Settings > Account > Delete Account</strong>. This will immediately deactivate your account and schedule your data for permanent deletion within 30 days.</p>
+
+            <h3>Method 2: Email Request</h3>
+            <p>Send an email to <strong>support@fixlens.com</strong> with the subject line "Data Deletion Request". Please include the email address associated with your account.</p>
+
+            <h2>What Data is Deleted?</h2>
+            <ul>
+                <li>Your profile information (Name, Email).</li>
+                <li>Your saved scan history and chat logs.</li>
+                <li>Your subscription details.</li>
+            </ul>
+            <p><strong>Retention:</strong> We may retain certain data for legal reporting purposes for up to 90 days after the deletion request.</p>
+        </div>
+    </div>
+
+    <!-- Global Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <a href="#home" class="logo" style="margin-bottom: 20px;" onclick="navigateTo('home')">
+                        <svg width="24" height="24" viewBox="0 0 100 100" fill="none">
+                            <rect width="100" height="100" rx="20" fill="#0f172a"/>
+                            <circle cx="50" cy="50" r="35" stroke="white" stroke-width="8"/>
+                        </svg>
+                        Orinzent
+                    </a>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 300px;">
+                        Building the future of problem solving with AI. <br>
+                        © 2025 Orinzent Inc.
+                    </p>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <a href="#home" onclick="navigateTo('home')">Home</a>
+                    <a href="#products" onclick="navigateTo('home')">Products</a>
+                    <a href="#contact" onclick="navigateTo('contact')">Contact Support</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Legal</h4>
+                    <a href="#privacy" onclick="navigateTo('privacy')">Privacy Policy</a>
+                    <a href="#terms" onclick="navigateTo('terms')">Terms & Conditions</a>
+                    <a href="#deletion" onclick="navigateTo('deletion')">Data Deletion</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SPA Router Script -->
+    <script>
+        function navigateTo(viewId) {
+            // Update URL hash
+            window.location.hash = viewId;
+        }
+
+        function router() {
+            // Get hash or default to home
+            const hash = window.location.hash.replace('#', '') || 'home';
+            
+            // Map known views
+            const views = ['home', 'contact', 'privacy', 'terms', 'deletion'];
+            const activeView = views.includes(hash) ? hash : 'home';
+
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show active view
+            document.getElementById('view-' + activeView).classList.add('active');
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+
+        // Listen for hash changes
+        window.addEventListener('hashchange', router);
+        // Load initial view
+        window.addEventListener('load', router);
+    </script>
+</body>
+</html>
